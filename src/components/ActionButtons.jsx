@@ -224,7 +224,7 @@ const ActionButtons = ({
       >
         <option value="formatted">Formatted JSON</option>
         <option value="raw">Raw Input</option>
-        <option value="table">Table (PNG)</option>
+        {/* <option value="table">Table (PNG)</option> */}
         <option value="csv">CSV</option>
         <option value="excel">Excel (XLSX)</option>
       </select>

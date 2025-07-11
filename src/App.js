@@ -365,12 +365,29 @@ const App = () => {
               {viewerFormat === "table" && (
                 <div className="scrollable-content">
                   {processedTableData.isValidTableData ? (
-                    <JsonTable
-                      headers={processedTableData.headers}
-                      rows={processedTableData.rows}
-                      theme={theme}
-                      tableRef={jsonTableRef}
-                    />
+                    processedTableData.rows.length > 1000 ? ( // Arbitrary limit, adjust as needed
+                      <div
+                        style={{
+                          padding: "20px",
+                          textAlign: "center",
+                          color: "var(--warning-text-color)",
+                          backgroundColor: "var(--warning-bg-color)",
+                          borderRadius: "8px",
+                          border: "1px solid var(--warning-border-color)",
+                          marginTop: "20px"
+                        }}
+                      >
+                        <p>This dataset contains {processedTableData.rows.length} rows. Displaying it as a table might cause performance issues.</p>
+                        <p>Consider exporting to CSV/Excel or using the Tree View for large datasets.</p>
+                      </div>
+                    ) : (
+                      <JsonTable
+                        headers={processedTableData.headers}
+                        rows={processedTableData.rows}
+                        theme={theme}
+                        tableRef={jsonTableRef}
+                      />
+                    )
                   ) : (
                     <div
                       style={{
