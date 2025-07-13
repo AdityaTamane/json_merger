@@ -38,6 +38,43 @@
   /* New Gradient Colors */
   --gradient-start: #0a84ff;
   --gradient-end: #66e0ff;
+
+  /* Theme Switch Variables (default for dark theme) */
+  --toggle-size: 30px; /* Base size for all em units */
+  --container-width: 5.625em;
+  --container-height: 2.5em;
+  --container-radius: 6.25em;
+
+  --sun-moon-diameter: 2.125em;
+  --sun-bg: #ECCA2F;
+  --moon-bg: #C4C9D1;
+  --spot-color: #959DB1;
+  --circle-container-offset: calc((var(--circle-container-diameter) - var(--container-height)) / 2 * -1);
+  --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25);
+  --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17);
+
+  /* Dark Theme Specific Switch Colors */
+  --toggle-container-dark-bg: #1a2a4b; /* Dark blue for night sky */
+  --stars-color: #fff;
+  --moon-shadow-color: #969696;
+
+  /* Light Theme Specific Switch Colors */
+  --toggle-container-light-bg: #6dd5ed; /* Light blue for day sky */
+  --clouds-color: #F3FDFF;
+  --back-clouds-color: #AACADF;
+  --sun-shadow-color: #a1872a;
+
+  /* --- HSL Color Variables for Action Buttons --- */
+  /* Format Button: #1f6feb (blue) */
+  --format-btn-h: 217; --format-btn-s: 91%; --format-btn-l: 52%;
+  /* Viewer Button: #238636 (green) */
+  --viewer-btn-h: 135; --viewer-btn-s: 58%; --viewer-btn-l: 33%;
+  /* Import Button: #9A6700 (orange/brown) */
+  --import-btn-h: 39; --import-btn-s: 100%; --import-btn-l: 30%;
+  /* Merge Button: #e36209 (orange) */
+  --merge-btn-h: 22; --merge-btn-s: 91%; --merge-btn-l: 47%;
+  /* Export Button: #8250DF (purple) */
+  --export-btn-h: 262; --export-btn-s: 70%; --export-btn-l: 59%;
 }
 
 /* Dark Theme */
@@ -75,6 +112,17 @@ body.dark-theme {
 
   --gradient-start: #0a84ff;
   --gradient-end: #66e0ff;
+
+  /* Apply dark theme specific toggle colors */
+  .theme-switch__container {
+    background-color: var(--toggle-container-dark-bg);
+  }
+  .theme-switch__stars-container {
+    opacity: 1; /* Stars visible in dark theme */
+  }
+  .theme-switch__clouds {
+    opacity: 0; /* Clouds hidden in dark theme */
+  }
 }
 
 /* Light Theme */
@@ -112,6 +160,17 @@ body.light-theme {
 
   --gradient-start: #007bff;
   --gradient-end: #6dd5ed; /* Lighter blue for light theme */
+
+  /* Apply light theme specific toggle colors */
+  .theme-switch__container {
+    background-color: var(--toggle-container-light-bg);
+  }
+  .theme-switch__stars-container {
+    opacity: 0; /* Stars hidden in light theme */
+  }
+  .theme-switch__clouds {
+    opacity: 1; /* Clouds visible in light theme */
+  }
 }
 
 
@@ -244,7 +303,7 @@ select {
   /* Custom SVG arrow for select dropdown (dark theme) */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e0e0e0'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 10px center;
+  background-position: right -1px center;
   background-size: 18px;
 }
 
@@ -280,7 +339,7 @@ pre {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
-/* Buttons in ActionButtons.js */
+/* Buttons in ActionButtons.js - Generic styles for the new 3D button */
 .action-buttons-container {
   display: flex;
   gap: 15px; /* Increased gap */
@@ -290,69 +349,161 @@ pre {
   justify-content: center; /* Center buttons horizontally */
 }
 
+/* Base button styles for the 3D effect */
 .action-buttons-container button,
-.action-buttons-container label { /* Apply styles to label for file inputs */
-  background-color: var(--button-bg-color);
-  color: var(--button-text-color);
+.action-buttons-container label {
+  position: relative;
   border: none;
-  border-radius: 10px;
-  padding: 12px 25px;
-  font-size: 16px;
-  font-weight: 500;
+  background: transparent;
+  padding: 0;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px var(--button-shadow);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: inline-flex; /* For labels to behave like buttons */
-  align-items: center;
-  justify-content: center;
-  text-decoration: none; /* For labels acting as links */
+  outline-offset: 4px;
+  transition: filter 250ms;
+  user-select: none;
+  touch-action: manipulation;
+  /* Ensure the button itself has some base size if needed, though front span defines it */
+  min-width: 100px; /* Example min-width */
+  text-align: center;
 }
 
+.action-buttons-container .shadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: hsl(0deg 0% 0% / 0.25); /* Dark shadow */
+  will-change: transform;
+  transform: translateY(2px);
+  transition: transform 600ms cubic-bezier(.3, .7, .4, 1);
+}
+
+.action-buttons-container .edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  /* Background will be set by specific button classes */
+}
+
+.action-buttons-container .front {
+  display: block;
+  position: relative;
+  padding: 8px 8px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  color: white;
+  font-weight: 500; /* Match your existing button font-weight */
+  text-transform: uppercase; /* Match your existing button text-transform */
+  letter-spacing: 0.5px; /* Match your existing button letter-spacing */
+  /* Background will be set by specific button classes */
+  will-change: transform;
+  transform: translateY(-4px);
+  transition: transform 600ms cubic-bezier(.3, .7, .4, 1);
+}
+
+/* Hover and Active states for the new 3D button */
 .action-buttons-container button:hover,
 .action-buttons-container label:hover {
-  background-color: var(--button-hover-bg-color);
-  box-shadow: 0 6px 20px var(--button-shadow);
+  filter: brightness(110%);
+}
+
+.action-buttons-container button:hover .front,
+.action-buttons-container label:hover .front {
+  transform: translateY(-6px);
+  transition: transform 250ms cubic-bezier(.3, .7, .4, 1.5);
+}
+
+.action-buttons-container button:active .front,
+.action-buttons-container label:active .front {
   transform: translateY(-2px);
+  transition: transform 34ms;
 }
 
-.action-buttons-container button:active,
-.action-buttons-container label:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px var(--button-active-shadow);
+.action-buttons-container button:hover .shadow,
+.action-buttons-container label:hover .shadow {
+  transform: translateY(4px);
+  transition: transform 250ms cubic-bezier(.3, .7, .4, 1.5);
 }
 
-/* Specific button colors for distinct actions */
-.action-buttons-container button:nth-child(1) { /* Format */
-  background-color: #1f6feb;
+.action-buttons-container button:active .shadow,
+.action-buttons-container label:active .shadow {
+  transform: translateY(1px);
+  transition: transform 34ms;
 }
-.action-buttons-container button:nth-child(1):hover {
-  background-color: #2c72ea;
+
+.action-buttons-container button:focus:not(:focus-visible),
+.action-buttons-container label:focus:not(:focus-visible) {
+  outline: none;
 }
-.action-buttons-container button:nth-child(2) { /* Viewer */
-  background-color: #238636;
+
+/* Specific button colors for distinct actions (using HSL variables) */
+.format-button .edge {
+  background: linear-gradient(
+    to left,
+    hsl(var(--format-btn-h) var(--format-btn-s) calc(var(--format-btn-l) - 16%)) 0%,
+    hsl(var(--format-btn-h) var(--format-btn-s) calc(var(--format-btn-l) - 1%)) 8%,
+    hsl(var(--format-btn-h) var(--format-btn-s) calc(var(--format-btn-l) - 1%)) 92%,
+    hsl(var(--format-btn-h) var(--format-btn-s) calc(var(--format-btn-l) - 16%)) 100%
+  );
 }
-.action-buttons-container button:nth-child(2):hover {
-  background-color: #2c943d;
+.format-button .front {
+  background: hsl(var(--format-btn-h) var(--format-btn-s) var(--format-btn-l));
 }
-.action-buttons-container label[for="upload-json"] { /* Import */
-  background-color: #9A6700;
+
+.viewer-button .edge {
+  background: linear-gradient(
+    to left,
+    hsl(var(--viewer-btn-h) var(--viewer-btn-s) calc(var(--viewer-btn-l) - 16%)) 0%,
+    hsl(var(--viewer-btn-h) var(--viewer-btn-s) calc(var(--viewer-btn-l) - 1%)) 8%,
+    hsl(var(--viewer-btn-h) var(--viewer-btn-s) calc(var(--viewer-btn-l) - 1%)) 92%,
+    hsl(var(--viewer-btn-h) var(--viewer-btn-s) calc(var(--viewer-btn-l) - 16%)) 100%
+  );
 }
-.action-buttons-container label[for="upload-json"]:hover {
-  background-color: #ad790a;
+.viewer-button .front {
+  background: hsl(var(--viewer-btn-h) var(--viewer-btn-s) var(--viewer-btn-l));
 }
-.action-buttons-container label[for="merge-json"] { /* Merge JSON */
-  background-color: #e36209;
+
+.import-button .edge {
+  background: linear-gradient(
+    to left,
+    hsl(var(--import-btn-h) var(--import-btn-s) calc(var(--import-btn-l) - 16%)) 0%,
+    hsl(var(--import-btn-h) var(--import-btn-s) calc(var(--import-btn-l) - 1%)) 8%,
+    hsl(var(--import-btn-h) var(--import-btn-s) calc(var(--import-btn-l) - 1%)) 92%,
+    hsl(var(--import-btn-h) var(--import-btn-s) calc(var(--import-btn-l) - 16%)) 100%
+  );
 }
-.action-buttons-container label[for="merge-json"]:hover {
-  background-color: #f0741c;
+.import-button .front {
+  background: hsl(var(--import-btn-h) var(--import-btn-s) var(--import-btn-l));
 }
-.action-buttons-container button[style*="#8250DF"] { /* Export */
-  background-color: #8250DF;
+
+.merge-button .edge {
+  background: linear-gradient(
+    to left,
+    hsl(var(--merge-btn-h) var(--merge-btn-s) calc(var(--merge-btn-l) - 16%)) 0%,
+    hsl(var(--merge-btn-h) var(--merge-btn-s) calc(var(--merge-btn-l) - 1%)) 8%,
+    hsl(var(--merge-btn-h) var(--merge-btn-s) calc(var(--merge-btn-l) - 1%)) 92%,
+    hsl(var(--merge-btn-h) var(--merge-btn-s) calc(var(--merge-btn-l) - 16%)) 100%
+  );
 }
-.action-buttons-container button[style*="#8250DF"]:hover {
-  background-color: #926ee6;
+.merge-button .front {
+  background: hsl(var(--merge-btn-h) var(--merge-btn-s) var(--merge-btn-l));
+}
+
+.export-button .edge {
+  background: linear-gradient(
+    to left,
+    hsl(var(--export-btn-h) var(--export-btn-s) calc(var(--export-btn-l) - 16%)) 0%,
+    hsl(var(--export-btn-h) var(--export-btn-s) calc(var(--export-btn-l) - 1%)) 8%,
+    hsl(var(--export-btn-h) var(--export-btn-s) calc(var(--export-btn-l) - 1%)) 92%,
+    hsl(var(--export-btn-h) var(--export-btn-s) calc(var(--export-btn-l) - 16%)) 100%
+  );
+}
+.export-button .front {
+  background: hsl(var(--export-btn-h) var(--export-btn-s) var(--export-btn-l));
 }
 
 
@@ -472,7 +623,7 @@ textarea:focus {
 
 
 /* Specific styles for JsonTable and JsonViewer inner elements (if they exist) */
-.json-table-container { 
+.json-table-container {
   flex: 1;
   height: 100%; /* ADDED: Ensures this container takes the full vertical space available from its flex parent */
   overflow: auto; /* IMPORTANT: This makes the table horizontally and vertically scrollable when content exceeds bounds */
@@ -576,31 +727,225 @@ textarea:focus {
 }
 
 
-/* Theme Toggle Button */
-.app-container > button { /* Targeting the theme toggle button */
-  background-color: var(--select-bg-color) !important;
-  color: var(--text-color) !important;
-  border: 1px solid var(--border-color) !important;
-  padding: 10px 18px !important;
-  border-radius: 10px !important;
-  font-weight: 500 !important;
-  font-size: 15px !important;
-  box-shadow: 0 2px 10px var(--shadow-color) !important;
-  transition: all 0.3s ease !important;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: absolute; /* Ensure it stays in place relative to app-container */
-  top: 30px;
-  right: 30px;
-  z-index: 100; /* Ensure it's above other content */
+/* --- THEME SWITCH STYLES --- */
+/* The top/right positioning should be handled by the component rendering the switch. */
+/* This ensures it's relative to its parent (e.g., app-container) and doesn't conflict with other elements. */
+
+.theme-switch {
+  /* Using em for sizes relative to --toggle-size for easier scaling */
+  --toggle-size: 30px; /* Base size. Change this to scale the whole switch. */
+  --container-width: 4.2em; /* 5.625 * 30px = 168.75px */
+  --container-height: 2.2em; /* 2.5 * 30px = 75px */
+  --container-radius: 6.2em; /* Large enough for rounded ends */
+  --circle-container-diameter: 3.375em; /* 3.375 * 30px = 101.25px */
+  --sun-moon-diameter: 2.125em; /* 2.125 * 30px = 63.75px */
+  --circle-container-offset: calc((var(--circle-container-diameter) - var(--container-height)) / 2 * -1);
+
+  /* Transitions */
+  --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25);
+  --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17);
 }
 
-.app-container > button:hover {
-  background-color: var(--select-border-color) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px var(--shadow-color) !important;
+.theme-switch, .theme-switch *, .theme-switch *::before, .theme-switch *::after {
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-size: var(--toggle-size); /* This sets the 'em' base for child elements */
 }
+
+.theme-switch__container {
+  width: var(--container-width);
+  height: var(--container-height);
+  border-radius: var(--container-radius);
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
+  box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
+  -webkit-transition: var(--transition);
+  -o-transition: var(--transition);
+  transition: var(--transition);
+  position: relative;
+}
+
+.theme-switch__container::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  -webkit-box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
+  box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
+  border-radius: var(--container-radius);
+}
+
+.theme-switch__checkbox {
+  display: none;
+}
+
+.theme-switch__circle-container {
+  width: var(--circle-container-diameter);
+  height: var(--circle-container-diameter);
+  background-color: rgba(255, 255, 255, 0.1);
+  position: absolute;
+  left: var(--circle-container-offset);
+  top: var(--circle-container-offset);
+  border-radius: var(--container-radius);
+  -webkit-box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-transition: var(--circle-transition);
+  -o-transition: var(--circle-transition);
+  transition: var(--circle-transition);
+  pointer-events: none;
+}
+
+.theme-switch__sun-moon-container {
+  pointer-events: auto;
+  position: relative;
+  z-index: 2;
+  width: var(--sun-moon-diameter);
+  height: var(--sun-moon-diameter);
+  margin: auto;
+  border-radius: var(--container-radius);
+  background-color: var(--sun-bg); /* Default to sun background */
+  -webkit-box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em var(--sun-shadow-color) inset;
+  box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em var(--sun-shadow-color) inset;
+  -webkit-filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
+  filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
+  overflow: hidden;
+  -webkit-transition: var(--transition);
+  -o-transition: var(--transition);
+  transition: var(--transition);
+}
+
+.theme-switch__moon {
+  -webkit-transform: translateX(100%); /* Initially push moon out of view */
+  -ms-transform: translateX(100%);
+  transform: translateX(100%);
+  width: 100%;
+  height: 100%;
+  background-color: var(--moon-bg);
+  border-radius: inherit;
+  -webkit-box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em var(--moon-shadow-color) inset;
+  box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em var(--moon-shadow-color) inset;
+  -webkit-transition: var(--transition);
+  -o-transition: var(--transition);
+  transition: var(--transition);
+  position: relative;
+}
+
+.theme-switch__spot {
+  position: absolute;
+  top: 0.75em;
+  left: 0.312em;
+  width: 0.75em;
+  height: 0.75em;
+  border-radius: var(--container-radius);
+  background-color: var(--spot-color);
+  -webkit-box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
+  box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
+}
+
+.theme-switch__spot:nth-of-type(2) {
+  width: 0.375em;
+  height: 0.375em;
+  top: 0.937em;
+  left: 1.375em;
+}
+
+.theme-switch__spot:nth-last-of-type(3) {
+  width: 0.25em;
+  height: 0.25em;
+  top: 0.312em;
+  left: 0.812em;
+}
+
+.theme-switch__clouds {
+  width: 1.25em;
+  height: 1.25em;
+  background-color: var(--clouds-color);
+  border-radius: var(--container-radius);
+  position: absolute;
+  bottom: -0.625em;
+  left: 0.312em;
+  -webkit-box-shadow: 0.937em 0.312em var(--clouds-color), -0.312em -0.312em var(--back-clouds-color), 1.437em 0.375em var(--clouds-color), 0.5em -0.125em var(--back-clouds-color), 2.187em 0 var(--clouds-color), 1.25em -0.062em var(--back-clouds-color), 2.937em 0.312em var(--clouds-color), 2em -0.312em var(--back-clouds-color), 3.625em -0.062em var(--clouds-color), 2.625em 0em var(--back-clouds-color), 4.5em -0.312em var(--clouds-color), 3.375em -0.437em var(--back-clouds-color), 4.625em -1.75em 0 0.437em var(--clouds-color), 4em -0.625em var(--back-clouds-color), 4.125em -2.125em 0 0.437em var(--back-clouds-color);
+  box-shadow: 0.937em 0.312em var(--clouds-color), -0.312em -0.312em var(--back-clouds-color), 1.437em 0.375em var(--clouds-color), 0.5em -0.125em var(--back-clouds-color), 2.187em 0 var(--clouds-color), 1.25em -0.062em var(--back-clouds-color), 2.937em 0.312em var(--clouds-color), 2em -0.312em var(--back-clouds-color), 3.625em -0.062em var(--clouds-color), 2.625em 0em var(--back-clouds-color), 4.5em -0.312em var(--clouds-color), 3.375em -0.437em var(--back-clouds-color), 4.625em -1.75em 0 0.437em var(--clouds-color), 4em -0.625em var(--back-clouds-color), 4.125em -2.125em 0 0.437em var(--back-clouds-color);
+  -webkit-transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+  -o-transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+  transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+  opacity: 0; /* Hidden by default */
+}
+
+.theme-switch__stars-container {
+  position: absolute;
+  color: var(--stars-color);
+  top: 50%; /* Center vertically in the container */
+  transform: translateY(-50%); /* Adjust for perfect centering */
+  left: 0.312em;
+  width: 2.75em;
+  height: auto;
+  -webkit-transition: var(--transition);
+  -o-transition: var(--transition);
+  transition: var(--transition);
+  opacity: 1; /* Visible by default */
+}
+
+/* actions */
+
+.theme-switch__checkbox:checked + .theme-switch__container {
+  background-color: var(--toggle-container-light-bg); /* Change to light background when checked */
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container {
+  left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter));
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container:hover {
+  left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter) - 0.187em);
+}
+
+.theme-switch__circle-container:hover {
+  left: calc(var(--circle-container-offset) + 0.187em);
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__moon {
+  -webkit-transform: translate(0);
+  -ms-transform: translate(0);
+  transform: translate(0);
+  /* The moon is visible when checked, meaning sun is hidden */
+  opacity: 0;
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__sun-moon-container {
+    background-color: var(--sun-bg); /* Show sun when checked */
+    box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em var(--sun-shadow-color) inset;
+}
+
+
+.theme-switch__checkbox:not(:checked) + .theme-switch__container .theme-switch__sun-moon-container {
+    background-color: var(--moon-bg); /* Show moon when not checked (dark theme) */
+    box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em var(--moon-shadow-color) inset;
+}
+
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__clouds {
+  bottom: -0.625em; /* Show clouds */
+  opacity: 1;
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__stars-container {
+  top: -100%; /* Hide stars */
+  transform: translateY(-50%); /* Still adjust, but they are off-screen */
+  opacity: 0;
+}
+
+.theme-switch__checkbox:not(:checked) + .theme-switch__container .theme-switch__moon {
+    transform: translateX(0); /* Moon visible when not checked */
+    opacity: 1;
+}
+
 
 /* Media Queries for Responsiveness */
 @media (max-width: 1024px) {
@@ -640,10 +985,16 @@ textarea:focus {
 
   .action-buttons-container button,
   .action-buttons-container label {
-    padding: 10px 20px;
-    font-size: 14px;
-    border-radius: 8px;
+    /* For 3D buttons, you might need to adjust the padding on the .front span directly */
+    /* padding: 10px 20px; */
+    /* font-size: 14px; */
+    /* border-radius: 8px; */
   }
+  .action-buttons-container .front {
+    padding: 10px 20px; /* Adjusted padding for smaller screens for the visible part */
+    font-size: 1rem; /* Slightly smaller font for smaller screens */
+  }
+
 
   select {
     padding: 8px 12px;
@@ -662,11 +1013,9 @@ textarea:focus {
     padding: 14px;
   }
 
-  .app-container > button {
-    top: 15px;
-    right: 15px;
-    font-size: 13px !important;
-    padding: 8px 12px !important;
+  /* Adjust theme switch button for smaller screens */
+  .theme-switch {
+    --toggle-size: 24px; /* Smaller base size */
   }
 
   .panel > div[style*="max-height"] { /* Targeting the file info div */
@@ -706,6 +1055,11 @@ textarea:focus {
     box-sizing: border-box; /* Include padding/border in width */
   }
 
+  .action-buttons-container .front {
+    padding: 10px 15px; /* Further adjusted padding for very small screens */
+    font-size: 0.9rem; /* Even smaller font for mobile */
+  }
+
   .panel,
   .output-panel {
     padding: 15px;
@@ -717,11 +1071,9 @@ textarea:focus {
     padding: 10px;
   }
 
-  .app-container > button {
-    font-size: 12px !important;
-    padding: 6px 10px !important;
-    top: 10px;
-    right: 10px;
+  /* Adjust theme switch button for mobile screens */
+  .theme-switch {
+    --toggle-size: 20px; /* Even smaller base size */
   }
 
   .json-data-table {

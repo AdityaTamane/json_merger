@@ -1,18 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { convertJsonToCsv, exportJsonToXlsx } from "../utils/exportHelpers";
-
-const buttonStyle = {
-  padding: "10px 20px",
-  borderRadius: "8px",
-  border: "none",
-  backgroundColor: "#555",
-  color: "white",
-  cursor: "pointer",
-  fontSize: "15px",
-  fontWeight: 500,
-  transition: "all 0.3s ease",
-  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-};
 
 const ActionButtons = ({
   onFormat,
@@ -28,6 +15,51 @@ const ActionButtons = ({
 }) => {
   const [exportType, setExportType] = useState("formatted");
 
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const content = e.target.result;
+          JSON.parse(content); // Validate JSON
+          onImport(content); // Pass content to App.js
+        } catch (error) {
+          alert(`Error parsing JSON from file: ${error.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+    event.target.value = null; // Clear the input so same file can be re-uploaded
+  };
+
+  const handleMergeFiles = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const fileReaders = files.map(file => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          resolve({ name: file.name, content: event.target.result });
+        };
+        reader.onerror = (error) => {
+          reject(`Failed to read file ${file.name}: ${error}`);
+        };
+        reader.readAsText(file);
+      });
+    });
+
+    Promise.all(fileReaders)
+      .then(onMerge) // Pass the array of {name, content} objects to onMerge
+      .catch(error => {
+        console.error("Error reading one or more files for merge:", error);
+        alert(`Error reading files: ${error}`);
+      });
+
+    e.target.value = null; // Clear the input so same files can be selected again
+  };
+
   const handleExportClick = () => {
     try {
       if (!input.trim() && !parsedJSON) { // Check both input and parsedJSON for content
@@ -37,8 +69,10 @@ const ActionButtons = ({
 
       let currentParsedData = null;
       try {
-        currentParsedData = JSON.parse(input);
+        // Attempt to parse input if it's not empty, for cases where 'input' holds the source
+        currentParsedData = input.trim() ? JSON.parse(input) : null;
       } catch (e) {
+        // If input is invalid JSON and export type is not 'raw', alert and offer raw export
         if (exportType !== 'raw') {
           alert(`Invalid JSON input. Cannot export as ${exportType}. Exporting as raw JSON instead.`);
           const blob = new Blob([input], { type: 'application/json' });
@@ -52,20 +86,9 @@ const ActionButtons = ({
         }
       }
 
-      let dataForTableExport = null;
-      if (outputMode === "merge" && parsedJSON) {
-        try {
-          dataForTableExport = JSON.parse(parsedJSON);
-        } catch (e) {
-          console.error("Error parsing merged JSON for table export:", e);
-          if (exportType === "csv" || exportType === "excel") {
-            alert("Merged JSON is not a valid structure for CSV/Excel export.");
-            return;
-          }
-        }
-      } else {
-        dataForTableExport = currentParsedData;
-      }
+      // Determine the data to be used for table/csv/excel exports
+      // If outputMode is merge, use parsedJSON. Otherwise, use currentParsedData (from input).
+      let dataForTableExport = outputMode === "merge" && parsedJSON ? JSON.parse(parsedJSON) : currentParsedData;
 
 
       switch (exportType) {
@@ -80,7 +103,8 @@ const ActionButtons = ({
           break;
 
         case "formatted":
-          const contentToExport = outputMode === "merge" ? parsedJSON : (currentParsedData ? JSON.stringify(currentParsedData, null, 2) : input);
+          // If outputMode is merge, use the merged parsedJSON. Otherwise, stringify the current parsed data (from input).
+          const contentToExport = outputMode === "merge" && parsedJSON ? parsedJSON : (currentParsedData ? JSON.stringify(currentParsedData, null, 2) : input);
           const formattedBlob = new Blob([contentToExport], { type: "application/json" });
           const formattedUrl = URL.createObjectURL(formattedBlob);
           const formattedA = document.createElement("a");
@@ -90,7 +114,7 @@ const ActionButtons = ({
           URL.revokeObjectURL(formattedUrl);
           break;
 
-        case "table":
+        case "table": // This case is now triggered by the dropdown
           if (outputMode === "viewer" && viewerFormat === "table" && isValidTableData) {
             onExportTablePng();
           } else {
@@ -132,108 +156,71 @@ const ActionButtons = ({
     }
   };
 
-  const handleMergeFiles = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    const fileReaders = files.map(file => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          resolve({ name: file.name, content: event.target.result });
-        };
-        reader.onerror = (error) => {
-          reject(`Failed to read file ${file.name}: ${error}`);
-        };
-        reader.readAsText(file);
-      });
-    });
-
-    Promise.all(fileReaders)
-      .then(onMerge) // Pass the array of {name, content} objects to onMerge
-      .catch(error => {
-        console.error("Error reading one or more files for merge:", error);
-        alert(`Error reading files: ${error}`);
-      });
-
-    e.target.value = null; // Clear the input so same files can be selected again
-  };
-
 
   return (
-    <div className="action-buttons-container" style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
-      <button onClick={onFormat} style={{ ...buttonStyle, backgroundColor: "#1f6feb" }}>
-        Format
+    <div className="action-buttons-container">
+      {/* Format Button */}
+      <button onClick={onFormat} className="format-button">
+        <span className="shadow"></span>
+        <span className="edge"></span>
+        <span className="front text">Format</span>
       </button>
 
-      <button onClick={onViewer} style={{ ...buttonStyle, backgroundColor: "#238636" }}>
-        Viewer
+      {/* Viewer Button */}
+      <button onClick={onViewer} className="viewer-button">
+        <span className="shadow"></span>
+        <span className="edge"></span>
+        <span className="front text">Viewer</span>
       </button>
 
+      {/* Import Button (using label for file input) */}
+      <label htmlFor="upload-json" className="import-button">
+        <span className="shadow"></span>
+        <span className="edge"></span>
+        <span className="front text">Import JSON</span>
+      </label>
       <input
         type="file"
-        accept=".json"
-        onChange={(e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            try {
-              const content = e.target.result;
-              onImport(content); // Call onImport with content
-            } catch (err) {
-              alert("Error reading file: " + err.message);
-            }
-          };
-          reader.readAsText(file);
-          e.target.value = null;
-        }}
-        style={{ display: "none" }}
         id="upload-json"
+        onChange={handleFileChange}
+        style={{ display: 'none' }}
+        accept=".json"
       />
-      <label htmlFor="upload-json" style={{ ...buttonStyle, backgroundColor: "#9A6700" }}>
-        Import
-      </label>
 
-      {/* Merge Button and File Input */}
+      {/* Merge JSON Button (using label for file input) */}
+      <label htmlFor="merge-json" className="merge-button">
+        <span className="shadow"></span>
+        <span className="edge"></span>
+        <span className="front text">Merge JSON</span>
+      </label>
       <input
         type="file"
-        accept=".json"
-        multiple // Allows multiple file selection
-        onChange={handleMergeFiles}
-        style={{ display: "none" }}
         id="merge-json"
+        onChange={handleMergeFiles}
+        style={{ display: 'none' }}
+        accept=".json"
+        multiple
       />
-      <label htmlFor="merge-json" style={{ ...buttonStyle, backgroundColor: "#e36209" }}>
-        Merge JSONs
-      </label>
 
       {/* Export Options Dropdown */}
       <select
         value={exportType}
         onChange={(e) => setExportType(e.target.value)}
-        style={{
-          ...buttonStyle,
-          padding: "10px 15px",
-          backgroundColor: "var(--select-bg-color)",
-          color: "var(--text-color)",
-          border: "1px solid var(--select-border-color)",
-          width: "150px",
-          cursor: "pointer",
-        }}
       >
         <option value="formatted">Formatted JSON</option>
         <option value="raw">Raw Input</option>
-        {/* <option value="table">Table (PNG)</option> */}
+        <option value="table">Table (PNG)</option>
         <option value="csv">CSV</option>
         <option value="excel">Excel (XLSX)</option>
       </select>
 
       <button
-        style={{ ...buttonStyle, backgroundColor: "#8250DF" }}
+        className="export-button"
         onClick={handleExportClick}
       >
-        Export
+        <span className="shadow"></span>
+        <span className="edge"></span>
+        <span className="front text">Export</span>
       </button>
     </div>
   );
